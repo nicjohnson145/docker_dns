@@ -37,6 +37,7 @@ func main() {
 		expectedDomains, err := getExpectedSubdomains(settings.Domain)
 		if err != nil {
 			fmt.Printf("error getting expected domains: %v", err)
+			continue
 		}
 		err = provider.Reconcile(expectedDomains)
 		if err != nil {
