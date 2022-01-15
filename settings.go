@@ -3,6 +3,7 @@ package main
 import (
 	"fmt"
 	"os"
+	"strconv"
 
 	"gopkg.in/ini.v1"
 )
@@ -12,6 +13,7 @@ type Settings struct {
 	ProviderName string
 	Username     string
 	Password     string
+	Interval     int
 }
 
 func LoadSettings() Settings {
@@ -56,10 +58,23 @@ func LoadSettings() Settings {
 		ExitErr(fmt.Sprintf("'password' key not found in auth file %s", authLocation))
 	}
 
+	// Load loop interval
+	var loopInterval int
+	if val, ok := os.LookupEnv("LOOP_INTERVAL"); !ok {
+		loopInterval = 5
+	} else {
+		intv, err := strconv.Atoi(val)
+		if err != nil {
+			ExitErr(fmt.Sprintf("Error parsing LOOP_INTERVAL: %v", err))
+		}
+		loopInterval = intv
+	}
+
 	return Settings{
 		Domain:       domain,
 		ProviderName: provider,
 		Username:     username,
 		Password:     password,
+		Interval:     loopInterval,
 	}
 }
