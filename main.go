@@ -4,6 +4,8 @@ import (
 	"fmt"
 	"os"
 	"time"
+	"flag"
+	"log"
 )
 
 type Provider interface {
@@ -29,21 +31,33 @@ func GetProvider(name string) Provider {
 }
 
 func main() {
+	var oneTime = flag.Bool("one-time", false, "Execute 1 loop and exit")
+	flag.Parse()
+
 	settings := LoadSettings()
 	provider := GetProvider(settings.ProviderName)
 	provider.Load(settings)
 
 	for {
-		expectedDomains, err := getExpectedSubdomains(settings.Domain)
-		if err != nil {
-			fmt.Printf("error getting expected domains: %v", err)
-			continue
+		_ = reconcile(settings, provider)
+		if *oneTime {
+			break
 		}
-		err = provider.Reconcile(expectedDomains)
-		if err != nil {
-			fmt.Printf("error reconciling: %v", err)
-		}
-
-		time.Sleep(5 * time.Second)
+		time.Sleep(time.Duration(settings.Interval) * time.Second)
 	}
+}
+
+func reconcile(settings Settings, provider Provider) error {
+	expectedDomains, err := getExpectedSubdomains(settings.Domain)
+	if err != nil {
+		log.Printf("error getting expected domains: %v\n", err)
+		return err
+	}
+	err = provider.Reconcile(expectedDomains)
+	if err != nil {
+		log.Printf("error reconciling: %v\n", err)
+		return err
+	}
+
+	return nil
 }
